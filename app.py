@@ -5,6 +5,11 @@ PaintQuote Pro — Flask application entry point.
 Run with:  python app.py
 """
 
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 import logging
 import os
 import json
@@ -155,8 +160,7 @@ def api_calculate():
         logger.error("Calculator/DB error: %s", exc)
         return jsonify({"error": str(exc)}), 500
 
-    logger.info("Quote #%d created for %s — ₹%,.0f",
-                quote_id, client_name, result["total_cost"])
+    logger.info(f"Quote #{quote_id} created for {client_name} — ₹{result['total_cost']:,.0f}")
     return jsonify(result)
 
 

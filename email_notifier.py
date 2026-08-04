@@ -312,18 +312,21 @@ def _build_html_email(
 def _log_to_console(quote, client_message, ai_reply, suggested_price,
                     trade_off, approval_id, secure_token):
     """Always log to console as a fallback notification."""
-    border = "=" * 62
-    print(f"\n{border}")
-    print(f"  📧  APPROVAL REQUIRED — PaintQuote Pro")
-    print(border)
-    print(f"  Quote:          #{quote.get('id')} — {quote.get('client_name')}")
-    print(f"  Original Price: ₹{quote.get('total_cost', 0):,.0f}")
-    print(f"\n  CLIENT MESSAGE:\n    {client_message}")
-    print(f"\n  AI DRAFT REPLY:\n    {ai_reply}")
-    if suggested_price:
-        print(f"\n  SUGGESTED PRICE: ₹{suggested_price:,.0f}")
-    if trade_off:
-        print(f"  TRADE-OFF:       {trade_off}")
-    print(f"\n  APPROVE: {APP_URL}/api/email-approve/{approval_id}?token={secure_token}")
-    print(f"  REJECT:  {APP_URL}/api/email-reject/{approval_id}?token={secure_token}")
-    print(border + "\n")
+    try:
+        border = "=" * 62
+        print(f"\n{border}")
+        print(f"  📧  APPROVAL REQUIRED — PaintQuote Pro")
+        print(border)
+        print(f"  Quote:          #{quote.get('id')} — {quote.get('client_name')}")
+        print(f"  Original Price: ₹{quote.get('total_cost', 0):,.0f}")
+        print(f"\n  CLIENT MESSAGE:\n    {client_message}")
+        print(f"\n  AI DRAFT REPLY:\n    {ai_reply}")
+        if suggested_price:
+            print(f"\n  SUGGESTED PRICE: ₹{suggested_price:,.0f}")
+        if trade_off:
+            print(f"  TRADE-OFF:       {trade_off}")
+        print(f"\n  APPROVE: {APP_URL}/api/email-approve/{approval_id}?token={secure_token}")
+        print(f"  REJECT:  {APP_URL}/api/email-reject/{approval_id}?token={secure_token}")
+        print(border + "\n")
+    except Exception as exc:
+        logger.warning(f"Could not log to console: {exc}")

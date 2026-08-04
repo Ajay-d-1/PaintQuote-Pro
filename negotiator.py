@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 from config import HAS_GROQ, GROQ_API_KEY
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL    = "llama3-70b-8192"
+MODEL    = "llama-3.3-70b-versatile"
 
 # Keywords that flag a message as price-related (requires Dad's approval)
 PRICE_KEYWORDS = [
