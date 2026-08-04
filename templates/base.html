@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PaintQuote Pro{% endblock %}</title>
+    <meta name="description" content="{% block description %}Professional painting quote and negotiation management system.{% endblock %}">
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────── -->
+<nav class="navbar">
+    <a href="/" class="nav-brand">🎨 PaintQuote Pro</a>
+
+    <div class="nav-links">
+        <a href="/" {% if request.path == '/' %}class="active"{% endif %}>New Quote</a>
+        <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>Dashboard</a>
+        <a href="/approval-queue" {% if '/approval' in request.path %}class="active"{% endif %}>
+            Approvals
+            {% if pending_count and pending_count > 0 %}
+            <span class="nav-badge">{{ pending_count }}</span>
+            {% endif %}
+        </a>
+    </div>
+
+    <button class="hamburger" onclick="openMobileNav()" aria-label="Open menu">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<!-- ── Mobile nav drawer ──────────────────────────────────── -->
+<div class="mobile-nav" id="mobile-nav">
+    <div class="mobile-nav-overlay" onclick="closeMobileNav()"></div>
+    <div class="mobile-nav-drawer">
+        <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
+        <div style="margin-top:2rem">
+            <a href="/" onclick="closeMobileNav()">New Quote</a>
+            <a href="/dashboard" onclick="closeMobileNav()">Dashboard</a>
+            <a href="/approval-queue" onclick="closeMobileNav()">
+                Approvals
+                {% if pending_count and pending_count > 0 %}
+                <span class="nav-badge">{{ pending_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ── Flash messages ─────────────────────────────────────── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ── Page content ───────────────────────────────────────── -->
+{% block content %}{% endblock %}
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+    © 2026 PaintQuote Pro — Built with ❤️ for Dad
+</footer>
+
+<!-- ── Toast container ────────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

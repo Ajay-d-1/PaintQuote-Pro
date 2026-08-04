@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}PaintQuote Pro — Professional Painting Quote Calculator{% endblock %}
+{% block description %}Get precise painting quotes in seconds. AI-powered negotiation assistant. Built for professional painting contractors.{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero Section ──────────────────────────────────────────── -->
+<section class="hero-section">
+    <div class="hero-inner">
+        <div class="hero-content">
+            <div class="hero-badge">✦ AI-Powered Negotiation</div>
+            <h1>Professional Painting Quotes in Seconds</h1>
+            <p>Stop guessing rates. Calculate precise material & labour costs, then let AI handle client negotiations — with your approval.</p>
+            <a href="#calculator" class="hero-cta">⚡ Create Free Quote →</a>
+        </div>
+
+        <div class="hero-graphic">
+            <div class="hero-art">
+                <div class="paint-blob blob-1"></div>
+                <div class="paint-blob blob-2"></div>
+                <div class="paint-blob blob-3"></div>
+                <div class="brush-stroke stroke-1"></div>
+                <div class="brush-stroke stroke-2"></div>
+                <div class="brush-stroke stroke-3"></div>
+                <div class="emoji-float e1">🎨</div>
+                <div class="emoji-float e2">🖌️</div>
+                <div class="emoji-float e3">✨</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Trust Bar ─────────────────────────────────────────────── -->
+<div class="trust-bar">
+    <div class="trust-bar-inner">
+        <div class="trust-item"><span class="check">✓</span> 20+ Years Experience</div>
+        <div class="trust-item"><span class="check">✓</span> 500+ Projects Completed</div>
+        <div class="trust-item"><span class="check">✓</span> 2-Year Workmanship Warranty</div>
+        <div class="trust-item"><span class="check">✓</span> Free Consultation</div>
+        <div class="trust-item"><span class="check">✓</span> GST-Inclusive Quotes</div>
+    </div>
+</div>
+
+<!-- ── Calculator ────────────────────────────────────────────── -->
+<div class="container" id="calculator">
+
+    <!-- Email fail banner (shown by JS if email fails) -->
+    <div id="emailFailBanner" class="email-fail-banner">
+        ⚠️ Email failed to send — <a href="/approval-queue" style="color:inherit;font-weight:700;text-decoration:underline;">Check Approval Queue →</a>
+    </div>
+
+    <div class="card" style="max-width:800px;margin:2rem auto;">
+        <h2>📝 Create New Quote</h2>
+
+        <!-- Client Info -->
+        <div class="form-group">
+            <label>Client Name *</label>
+            <input type="text" id="clientName" placeholder="e.g., Sharma Residence" autocomplete="off">
+        </div>
+
+        <!-- Paint Grade -->
+        <div class="form-group">
+            <label>Paint Grade</label>
+            <select id="paintGrade">
+                <option value="economy">Economy — ₹180/L &middot; Basic finish &middot; 2-year durability</option>
+                <option value="premium" selected>Premium — ₹350/L &middot; Smooth finish &middot; 5-year durability</option>
+                <option value="luxury">Luxury — ₹650/L &middot; Designer finish &middot; 7-year durability</option>
+            </select>
+        </div>
+
+        <!-- Rooms -->
+        <div class="section-label">Rooms</div>
+
+        <!-- Column headers for rooms -->
+        <div class="room-row" style="margin-bottom:0.25rem">
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Room Name</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Length (ft)</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Width (ft)</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Height (ft)</span>
+            <span></span>
+        </div>
+
+        <div id="roomsContainer">
+            <div class="room-row">
+                <input type="text"   class="room-name"   placeholder="Room name"    value="Living Room">
+                <input type="number" class="room-length"  placeholder="Length"       value="15" min="1">
+                <input type="number" class="room-width"   placeholder="Width"        value="12" min="1">
+                <input type="number" class="room-height"  placeholder="Height"       value="10" min="1">
+                <button class="btn-remove" onclick="removeRoom(this)" title="Remove room">✕</button>
+            </div>
+        </div>
+
+        <button type="button" class="btn-secondary" id="addRoomBtn" onclick="addRoom()" style="margin-bottom:1.5rem">
+            + Add Room
+        </button>
+
+        <!-- Extras -->
+        <div class="section-label">Extras & Finishes</div>
+        <div class="extras-grid">
+            <label class="checkbox-label">
+                <input type="checkbox" id="putty"> 🧱 Wall Putty
+                <span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto">₹8/sqft</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="primer"> 🪣 Primer Coat
+                <span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto">₹5/sqft</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="molding"> 🏛️ Crown Molding
+                <span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto">₹45/ft</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="falseCeiling"> ✨ False Ceiling
+                <span style="font-size:0.75rem;color:var(--text-muted);margin-left:auto">₹85/sqft</span>
+            </label>
+        </div>
+
+        <div id="moldingLength" class="form-group hidden">
+            <label>Molding Length (ft)</label>
+            <input type="number" id="moldingLengthInput" placeholder="e.g., 40" value="40" min="1">
+        </div>
+
+        <button type="button" class="btn-primary btn-full" id="calcBtn" onclick="calculateQuote(event)" style="margin-top:0.5rem;height:48px;font-size:1rem">
+            ⚡ Calculate Quote
+        </button>
+    </div>
+
+    <!-- Result Card -->
+    <div id="resultCard" class="card hidden" style="max-width:800px;margin:0 auto 2rem;border-left:4px solid var(--brand);">
+        <h2>💰 Quote Summary</h2>
+        <div id="quoteResult"></div>
+        <div class="actions">
+            <button class="btn-primary" onclick="saveQuote()">View Full Quote & Negotiate →</button>
+            <button class="btn-secondary" onclick="resetForm()">New Quote</button>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let savedQuoteId = null;
+
+    function saveQuote() {
+        if (savedQuoteId) {
+            window.location.href = '/quote/' + savedQuoteId;
+        } else if (currentQuote && currentQuote.id) {
+            window.location.href = '/quote/' + currentQuote.id;
+        }
+    }
+
+    // Show email fail banner if needed (called from negotiate flow on other pages)
+    function showEmailFailBanner() {
+        const banner = document.getElementById('emailFailBanner');
+        if (banner) banner.classList.add('visible');
+    }
+</script>
+{% endblock %}

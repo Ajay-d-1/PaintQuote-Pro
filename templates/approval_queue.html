@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Queue — PaintQuote Pro{% endblock %}
+{% block description %}Review AI-drafted negotiation replies before they're sent to clients.{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Page header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">🔔 Approval Queue</h1>
+            <p class="page-subtitle">Review AI-drafted replies before they reach your clients. Approve or write your own.</p>
+        </div>
+        {% if pending_count > 0 %}
+        <span class="status-badge status-pending" style="font-size:0.9rem;padding:0.5rem 1.2rem">
+            {{ pending_count }} Pending Review
+        </span>
+        {% else %}
+        <span class="status-badge status-approved" style="font-size:0.9rem;padding:0.5rem 1.2rem">
+            ✓ All Caught Up!
+        </span>
+        {% endif %}
+    </div>
+
+    {% if approvals %}
+
+    {% set pending  = approvals | selectattr('status', 'eq', 'pending') | list %}
+    {% set resolved = approvals | rejectattr('status', 'eq', 'pending') | list %}
+
+    <!-- ── Pending Section ───────────────────────────────────── -->
+    {% if pending %}
+    <div class="section-label" style="margin-bottom:0.75rem">⏳ Pending Review ({{ pending | length }})</div>
+
+    {% for item in pending %}
+    <div class="approval-item pending" id="approval-{{ item.id }}">
+
+        <div class="approval-header">
+            <div class="approval-meta">
+                <span class="approval-id">AQ-{{ item.id }}</span>
+                <span class="approval-client">{{ item.client_name }}</span>
+                <span class="status-badge status-pending">Pending</span>
+                <a href="/quote/{{ item.quote_id }}" class="btn-small" style="font-size:0.75rem">Quote #{{ item.quote_id }}</a>
+            </div>
+            <span class="approval-time">{{ item.created_at[:16].replace('T', ' ') }}</span>
+        </div>
+
+        <div class="approval-body">
+            <!-- Client message -->
+            <div class="approval-message-box">
+                <div class="box-label">💬 Client Message</div>
+                <div class="box-content">{{ item.client_message }}</div>
+            </div>
+            <!-- AI draft -->
+            <div class="approval-message-box">
+                <div class="box-label">🤖 AI Draft Reply</div>
+                <div class="box-content">{{ item.ai_suggested_reply }}</div>
+                {% if item.suggested_price %}
+                <div class="approval-price-tag">
+                    💰 Counter-offer: ₹{{ "%.0f" | format(item.suggested_price) }}
+                    <span style="color:var(--text-muted);font-size:0.72rem;font-weight:400">
+                        (was ₹{{ "%.0f" | format(item.total_cost) }})
+                    </span>
+                </div>
+                {% endif %}
+                {% if item.trade_off %}
+                <div class="trade-off-info">↔️ {{ item.trade_off }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Optional custom reply -->
+        <div class="custom-reply-section">
+            <label>✏️ Optional: Edit reply before sending (leave blank to use AI draft)</label>
+            <textarea id="custom-reply-{{ item.id }}"
+                      placeholder="Type your own reply here, or leave blank to send the AI draft as-is…"></textarea>
+        </div>
+
+        <div class="approval-actions" style="margin-top:1rem">
+            <button class="btn-success" onclick="approveItem({{ item.id }})">✅ Approve &amp; Send</button>
+            <button class="btn-danger"  onclick="rejectItem({{ item.id }})">❌ Reject</button>
+            <a href="/quote/{{ item.quote_id }}" class="btn-secondary" style="font-size:0.85rem">View Full Chat →</a>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- ── Empty Pending State ───────────────────────────────── -->
+    {% if not pending %}
+    <div class="card" style="text-align:center;padding:3rem 2rem">
+        <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+        <h2 style="justify-content:center;margin-bottom:0.5rem">All Caught Up!</h2>
+        <p style="color:var(--text-muted);font-size:0.95rem">No pending approval requests. Great work!</p>
+    </div>
+    {% endif %}
+
+    <!-- ── Resolved Section ──────────────────────────────────── -->
+    {% if resolved %}
+    <div class="section-label" style="margin-top:2rem;margin-bottom:0.75rem">✓ Resolved ({{ resolved | length }})</div>
+
+    {% for item in resolved %}
+    <div class="approval-item {{ item.status }}">
+        <div class="approval-header">
+            <div class="approval-meta">
+                <span class="approval-id">AQ-{{ item.id }}</span>
+                <span class="approval-client">{{ item.client_name }}</span>
+                <span class="status-badge status-{{ item.status }}">{{ item.status.title() }}</span>
+                <a href="/quote/{{ item.quote_id }}" class="btn-small" style="font-size:0.75rem">Quote #{{ item.quote_id }}</a>
+            </div>
+            <span class="approval-time">
+                Resolved {{ item.resolved_at[:16].replace('T', ' ') if item.resolved_at else '' }}
+            </span>
+        </div>
+
+        <div class="approval-body">
+            <div class="approval-message-box">
+                <div class="box-label">💬 Client Message</div>
+                <div class="box-content">{{ item.client_message }}</div>
+            </div>
+            <div class="approval-message-box">
+                <div class="box-label">
+                    {% if item.status == 'approved' %}✅ Reply Sent
+                    {% else %}❌ Rejected — Not Sent{% endif %}
+                </div>
+                <div class="box-content">{{ item.ai_suggested_reply }}</div>
+                {% if item.dad_response %}
+                <div class="trade-off-info" style="color:var(--brand)">✏️ Your note: {{ item.dad_response }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% else %}
+    <!-- Totally empty state -->
+    <div class="card" style="text-align:center;padding:5rem 2rem">
+        <div style="font-size:3.5rem;margin-bottom:1rem;opacity:0.5">🔔</div>
+        <h2 style="justify-content:center;margin-bottom:0.5rem">No Approval Requests Yet</h2>
+        <p style="color:var(--text-muted);max-width:400px;margin:0 auto 1.5rem">
+            Price-related client messages will appear here for your review before being sent.
+        </p>
+        <a href="/" class="btn-primary">Create a Quote</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function approveItem(id) {
+        const customReply = document.getElementById(`custom-reply-${id}`)?.value.trim() || '';
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        try {
+            const resp = await fetch('/api/approve_message', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ approval_id: id, dad_response: customReply })
+            });
+            const data = await resp.json();
+            if (data.status === 'approved') {
+                const el = document.getElementById(`approval-${id}`);
+                el.classList.replace('pending', 'approved');
+                el.querySelector('.approval-meta .status-badge').outerHTML =
+                    '<span class="status-badge status-approved">✅ Approved</span>';
+                el.querySelector('.approval-actions').innerHTML =
+                    `<span style="color:var(--success-text);font-size:0.9rem;font-weight:700">✅ Reply sent to client</span>`;
+                el.style.opacity = '0.75';
+                updateBadges();
+                showToast('Reply approved and sent!', 'success');
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = '✅ Approve & Send';
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+
+    async function rejectItem(id) {
+        const customReply = document.getElementById(`custom-reply-${id}`)?.value.trim() || '';
+        if (!confirm('Reject this AI reply?' + (customReply ? ' Your custom reply will be sent instead.' : ' No reply will be sent to the client.'))) return;
+
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Rejecting…';
+
+        try {
+            const resp = await fetch('/api/reject_message', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ approval_id: id, dad_response: customReply })
+            });
+            const data = await resp.json();
+            if (data.status === 'rejected') {
+                const el = document.getElementById(`approval-${id}`);
+                el.classList.replace('pending', 'rejected');
+                el.querySelector('.approval-meta .status-badge').outerHTML =
+                    '<span class="status-badge status-rejected">❌ Rejected</span>';
+                el.querySelector('.approval-actions').innerHTML =
+                    `<span style="color:var(--danger-text);font-size:0.9rem;font-weight:700">❌ ${customReply ? 'Your reply was sent' : 'Reply rejected — nothing sent'}</span>`;
+                el.style.opacity = '0.75';
+                updateBadges();
+                showToast(customReply ? 'Rejected — your reply was sent.' : 'Rejected.', 'info');
+            }
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = '❌ Reject';
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+
+    function updateBadges() {
+        const remaining = document.querySelectorAll('.approval-item.pending').length;
+        const navBadge  = document.querySelector('.nav-badge');
+        const hdrBadge  = document.querySelector('.page-header .status-badge');
+
+        if (remaining === 0) {
+            if (navBadge) navBadge.remove();
+            if (hdrBadge) {
+                hdrBadge.className = 'status-badge status-approved';
+                hdrBadge.style.cssText = 'font-size:0.9rem;padding:0.5rem 1.2rem';
+                hdrBadge.textContent = '✓ All Caught Up!';
+            }
+        } else {
+            if (navBadge) navBadge.textContent = remaining;
+            if (hdrBadge) hdrBadge.textContent = `${remaining} Pending Review`;
+        }
+    }
+</script>
+{% endblock %}

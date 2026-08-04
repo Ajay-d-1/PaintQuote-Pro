@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat — Quote #{{ quote.id }} · PaintQuote Pro</title>
+    <meta name="description" content="Chat with your painting contractor about your quote.">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .sim-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 700px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+        .sim-header {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .contractor-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--gradient-brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .contractor-info h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .contractor-info p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.35rem;
+            box-shadow: 0 0 6px var(--accent-green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .quote-summary-strip {
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-sm);
+            padding: 0.875rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .qss-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .qss-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .qss-value { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+        .qss-value.price { color: var(--accent-teal); }
+        .sim-chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+            scroll-behavior: smooth;
+        }
+        .sim-chat::-webkit-scrollbar { width: 4px; }
+        .sim-chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .sim-input-bar {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.875rem;
+        }
+        .sim-input-bar input {
+            flex: 1;
+            padding: 0.65rem 0.875rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        .sim-input-bar input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: rgba(99,102,241,0.07);
+        }
+        .quick-msg-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+        .typing-indicator .bubble {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding: 0.875rem 1rem;
+        }
+        .typing-dot {
+            width: 7px; height: 7px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typingBounce 1.2s ease infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🎨 PaintQuote Pro</div>
+        <div class="nav-links" style="font-size:0.82rem;color:var(--text-muted)">
+            Client View — Quote #{{ quote.id }}
+        </div>
+    </nav>
+
+    <div class="sim-container">
+
+        <div class="sim-header">
+            <div class="contractor-avatar">🎨</div>
+            <div class="contractor-info">
+                <h3>Painting Contractor</h3>
+                <p><span class="online-dot"></span>Active now · AI-assisted responses</p>
+            </div>
+        </div>
+
+        <div class="quote-summary-strip">
+            <div class="qss-item">
+                <span class="qss-label">Client</span>
+                <span class="qss-value">{{ quote.client_name }}</span>
+            </div>
+            <div class="qss-item">
+                <span class="qss-label">Grade</span>
+                <span class="qss-value">{{ quote.paint_grade.title() }}</span>
+            </div>
+            <div class="qss-item">
+                <span class="qss-label">Area</span>
+                <span class="qss-value">{{ "%.0f" | format(quote.total_area) }} sq ft</span>
+            </div>
+            <div class="qss-item">
+                <span class="qss-label">Quoted Price</span>
+                <span class="qss-value price">₹{{ "%.0f" | format(quote.total_cost) }}</span>
+            </div>
+        </div>
+
+        <div class="sim-chat" id="simChat">
+            <!-- System intro message -->
+            <div class="chat-message agent">
+                <div class="msg-label">Contractor</div>
+                <div class="bubble">
+                    <p>Hello {{ quote.client_name }}! Thank you for considering us for your painting project.
+                       I've shared the detailed quote with you. The total comes to <strong>₹{{ "%.0f" | format(quote.total_cost) }}</strong>
+                       for {{ "%.0f" | format(quote.total_area) }} sq ft with {{ quote.paint_grade.title() }} grade paint.
+                       Feel free to ask me anything!</p>
+                </div>
+            </div>
+
+            {% if chat_history %}
+            {% for msg in chat_history %}
+            {% if msg.role == 'client' or msg.approval_status == 'sent' %}
+            <div class="chat-message {{ msg.role }}">
+                <div class="msg-label">{{ "You" if msg.role == "client" else "Contractor" }}</div>
+                <div class="bubble">
+                    <p>{{ msg.message }}</p>
+                    {% if msg.role == 'agent' %}
+                    <div class="chat-tags">
+                        {% if msg.suggested_price %}
+                        <span class="suggested-price">💰 Counter offer: ₹{{ "%.0f" | format(msg.suggested_price) }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <div>
+            <div class="sim-input-bar">
+                <input type="text" id="simInput"
+                       placeholder="Type your message… e.g. 'Can you lower the price?'">
+                <button class="btn-primary" id="simSendBtn" onclick="simSend()">Send</button>
+            </div>
+            <div class="quick-msg-row">
+                <button class="btn-small" onclick="simQuick('Can you give me a 10% discount?')">💸 Ask for discount</button>
+                <button class="btn-small" onclick="simQuick('This is too expensive for my budget.')">😬 Too expensive</button>
+                <button class="btn-small" onclick="simQuick('Can you complete it faster?')">⚡ Faster timeline</button>
+                <button class="btn-small" onclick="simQuick('What if we use cheaper paint?')">🎨 Cheaper paint</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const quoteId = {{ quote.id }};
+        let polling = null;
+
+        function simQuick(text) {
+            document.getElementById('simInput').value = text;
+            document.getElementById('simInput').focus();
+        }
+
+        function addMsg(role, content, suggestedPrice=null) {
+            const chat = document.getElementById('simChat');
+            const div = document.createElement('div');
+            div.className = `chat-message ${role}`;
+
+            let tagsHtml = '';
+            if (role === 'agent' && suggestedPrice) {
+                tagsHtml = `<div class="chat-tags">
+                    <span class="suggested-price">💰 Counter offer: ₹${parseFloat(suggestedPrice).toFixed(0)}</span>
+                </div>`;
+            }
+
+            const label = role === 'client' ? 'You' : 'Contractor';
+            div.innerHTML = `
+                <div class="msg-label">${label}</div>
+                <div class="bubble">
+                    <p>${content}</p>
+                    ${tagsHtml}
+                </div>
+            `;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return div;
+        }
+
+        function addTyping() {
+            const chat = document.getElementById('simChat');
+            const div = document.createElement('div');
+            div.className = 'chat-message agent typing-indicator';
+            div.id = 'typingIndicator';
+            div.innerHTML = `
+                <div class="msg-label">Contractor</div>
+                <div class="bubble">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function removeTyping() {
+            const t = document.getElementById('typingIndicator');
+            if (t) t.remove();
+        }
+
+        async function simSend() {
+            const input = document.getElementById('simInput');
+            const btn = document.getElementById('simSendBtn');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>';
+
+            addMsg('client', message);
+            addTyping();
+
+            try {
+                const resp = await fetch('/api/negotiate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({quote_id: quoteId, message: message})
+                });
+                const data = await resp.json();
+
+                removeTyping();
+
+                if (data.error) {
+                    addMsg('agent', 'Error: ' + data.error);
+                } else if (data.requires_approval || data.status === 'pending_approval') {
+                    addMsg('agent', "Thanks for your message! I'll review this and get back to you shortly.");
+                    startPolling();
+                } else {
+                    addMsg('agent', data.reply, data.suggested_price);
+                }
+            } catch(e) {
+                removeTyping();
+                addMsg('agent', 'Sorry, I had trouble processing that. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Send';
+            }
+        }
+
+        function startPolling() {
+            if (polling) return;
+            let lastCount = document.querySelectorAll('.chat-message.agent:not(.typing-indicator)').length;
+            polling = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/chat_history/${quoteId}`);
+                    const data = await resp.json();
+                    const agentMsgs = data.filter(m => m.role === 'agent' && m.approval_status === 'sent');
+                    if (agentMsgs.length > lastCount) {
+                        clearInterval(polling);
+                        polling = null;
+                        const newMsg = agentMsgs[agentMsgs.length - 1];
+                        addMsg('agent', newMsg.message, newMsg.suggested_price);
+                    }
+                } catch(e) {}
+            }, 3000);
+        }
+
+        document.getElementById('simInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') simSend();
+        });
+
+        // Scroll to bottom
+        const chat = document.getElementById('simChat');
+        chat.scrollTop = chat.scrollHeight;
+    </script>
+</body>
+</html>

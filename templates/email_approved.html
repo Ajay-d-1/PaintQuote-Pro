@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Approved — PaintQuote Pro</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta http-equiv="refresh" content="4;url=/dashboard">
+    <style>
+        body { background: #f3f4f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; }
+        .success-card { background: white; border-radius: 16px; padding: 3rem; text-align: center; max-width: 480px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .icon { font-size: 4rem; margin-bottom: 1.25rem; }
+        h1 { font-size: 1.75rem; font-weight: 800; color: #065f46; margin-bottom: 0.75rem; }
+        p { color: #6b7280; font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+        .progress { height: 4px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 1.5rem; }
+        .progress-bar { height: 100%; background: #10b981; border-radius: 4px; animation: shrink 4s linear forwards; }
+        @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+        a { color: #1e40af; font-weight: 600; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="success-card">
+        <div class="icon">✅</div>
+        <h1>Message Approved!</h1>
+        <p>The AI-suggested response has been sent to the client. They'll see it in their conversation.</p>
+        {% if approval_id %}
+        <p style="font-size:0.8rem;color:#9ca3af">Approval ID: AQ-{{ approval_id }}</p>
+        {% endif %}
+        <div class="progress"><div class="progress-bar"></div></div>
+        <p style="font-size:0.85rem;margin-bottom:0.5rem">Redirecting to dashboard in 4 seconds…</p>
+        <a href="/dashboard">Go to Dashboard →</a>
+    </div>
+</body>
+</html>

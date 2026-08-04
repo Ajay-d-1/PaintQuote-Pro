@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Quote #{{ quote.id }} — {{ quote.client_name }} · PaintQuote Pro{% endblock %}
+{% block description %}View quote details and negotiate with the AI assistant for {{ quote.client_name }}.{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1200px">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="/dashboard">Dashboard</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>Quote #{{ quote.id }} — {{ quote.client_name }}</span>
+    </div>
+
+    <!-- Email fail banner (shown by JS) -->
+    <div id="emailFailBanner" class="email-fail-banner" style="border-radius:8px;margin-bottom:1rem">
+        ⚠️ Email notification failed to send — <a href="/approval-queue" style="color:inherit;font-weight:800;text-decoration:underline;">Check Approval Queue →</a>
+    </div>
+
+    <div class="two-column">
+
+        <!-- ── LEFT: Quote Details ─────────────────────────────── -->
+        <div class="column">
+            <div class="card">
+                <h2>
+                    📄 Quote #{{ quote.id }}
+                    <span class="status-badge status-{{ quote.status }}" style="font-size:0.72rem">{{ quote.status.title() }}</span>
+                </h2>
+
+                <!-- Client Info -->
+                <div class="quote-info-grid">
+                    <div class="info-item">
+                        <span class="label">Client</span>
+                        <span class="value">{{ quote.client_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Paint Grade</span>
+                        <span class="value">{{ quote.paint_grade.title() }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Total Area</span>
+                        <span class="value">{{ "%.0f" | format(quote.total_area) }} sq ft</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Date</span>
+                        <span class="value">{{ quote.created_at[:10] }}</span>
+                    </div>
+                    <div class="info-item" style="grid-column:1/-1">
+                        <span class="label">Grand Total</span>
+                        <span class="value highlight">₹{{ "%.2f" | format(quote.total_cost) }}</span>
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <!-- Cost Breakdown -->
+                <div class="section-label">Cost Breakdown</div>
+                <table class="breakdown-table">
+                    {% for item, amount in quote_breakdown.items() %}
+                    {% set row_class = '' %}
+                    {% if item == 'Grand Total' %}{% set row_class = 'total-row' %}
+                    {% elif item == 'GST (18%)' %}{% set row_class = 'gst-row' %}
+                    {% elif item == 'Subtotal' %}{% set row_class = 'subtotal-row' %}
+                    {% endif %}
+                    <tr class="{{ row_class }}">
+                        <td>{{ item }}</td>
+                        <td class="amount">₹{{ "%.2f" | format(amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+
+                <!-- Actions -->
+                <div class="actions">
+                    <a href="/api/quote/{{ quote.id }}/pdf" class="btn-primary">📄 Download PDF</a>
+                    <a href="/quote/{{ quote.id }}" class="btn-secondary" onclick="return false" style="cursor:default;opacity:0.6">Current Page</a>
+                </div>
+            </div>
+
+            <!-- Room breakdown -->
+            {% if rooms_data %}
+            <div class="card">
+                <h2>🏠 Room Breakdown</h2>
+                <table class="breakdown-table">
+                    <thead>
+                        <tr>
+                            <td style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Room</td>
+                            <td style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Dimensions</td>
+                            <td class="amount" style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)">Wall Area</td>
+                        </tr>
+                    </thead>
+                    {% for room in rooms_data %}
+                    <tr>
+                        <td style="font-weight:600">{{ room.get('name', 'Room') }}</td>
+                        <td style="color:var(--text-muted);font-size:0.88rem">{{ room.get('dimensions', '') }}</td>
+                        <td class="amount" style="color:var(--text-muted);font-size:0.88rem">{{ "%.0f" | format(room.get('area', 0)) }} sqft</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ── RIGHT: Chat Simulator ──────────────────────────── -->
+        <div class="column">
+            <div class="card chat-card" id="chatCard">
+                <h2>🤖 AI Negotiation Assistant</h2>
+                <p class="chat-subtitle">
+                    Price questions go to Dad for approval via email. General questions answered instantly.
+                </p>
+
+                <!-- Chat history -->
+                <div id="chatHistory" class="chat-history">
+                    {% if chat_history %}
+                        {% for msg in chat_history %}
+                        {% if msg.role == 'client' or msg.approval_status == 'sent' %}
+                        <div class="chat-message {{ msg.role }}">
+                            <div class="msg-label">{{ "Client" if msg.role == "client" else "AI Assistant" }}</div>
+                            <div class="bubble">
+                                <p>{{ msg.message }}</p>
+                                {% if msg.role == 'agent' %}
+                                <div class="chat-tags">
+                                    {% if msg.suggested_price %}
+                                    <span class="suggested-price">💰 ₹{{ "%.0f" | format(msg.suggested_price) }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% elif msg.role == 'agent' and msg.approval_status == 'pending' %}
+                        <div class="pending-notice">
+                            ⏳ Awaiting Dad's Approval — Response drafted, email sent
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="chat-placeholder">
+                        <div class="chat-placeholder-icon">💬</div>
+                        <span>No messages yet.<br>Simulate a client message below.</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Input area -->
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput"
+                           placeholder="Type a client message… e.g. 'Can you reduce the price?'">
+                    <button class="btn-primary" id="sendBtn" onclick="sendMessage({{ quote.id }})">Send</button>
+                </div>
+
+                <!-- Quick reply buttons -->
+                <div class="quick-messages">
+                    <button class="btn-small" onclick="quickMessage('Can you give me a 10% discount?')">💸 Discount?</button>
+                    <button class="btn-small" onclick="quickMessage('This is too expensive for me.')">😬 Too expensive</button>
+                    <button class="btn-small" onclick="quickMessage('How long will it take to finish?')">⏱️ Timeline?</button>
+                    <button class="btn-small" onclick="quickMessage('What paint brand do you use?')">🎨 What paint?</button>
+                    <button class="btn-small" onclick="quickMessage('Can we skip the primer coat?')">✂️ Skip primer?</button>
+                    <button class="btn-small" onclick="quickMessage('Do you offer a warranty?')">🛡️ Warranty?</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const quoteId = {{ quote.id }};
+
+    async function sendMessage(id) {
+        const input  = document.getElementById('chatInput');
+        const btn    = document.getElementById('sendBtn');
+        const message = input.value.trim();
+        if (!message) return;
+
+        input.value  = '';
+        addMessageToUI('client', message);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>';
+
+        try {
+            const resp = await fetch('/api/negotiate', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ quote_id: id, message })
+            });
+            const data = await resp.json();
+
+            if (data.error) {
+                showToast('Error: ' + data.error, 'error');
+            } else if (data.requires_approval || data.status === 'pending_approval') {
+                addPendingNotice('⏳ Awaiting Dad\'s Approval — Response drafted, email sent');
+
+                if (!data.email_sent) {
+                    // Show in-app email failure warning
+                    const banner = document.getElementById('emailFailBanner');
+                    if (banner) banner.style.display = 'block';
+                    showToast('⚠️ Email failed — check Approval Queue', 'warning', 7000);
+                } else {
+                    showToast('Email sent to Dad for approval!', 'success');
+                }
+            } else {
+                addMessageToUI('agent', data.reply, data.suggested_price, data.trade_off);
+            }
+        } catch (e) {
+            addMessageToUI('agent', 'Sorry, something went wrong. Please try again.');
+            showToast('Network error: ' + e.message, 'error');
+        } finally {
+            btn.disabled  = false;
+            btn.innerHTML = 'Send';
+        }
+    }
+
+    function quickMessage(text) {
+        document.getElementById('chatInput').value = text;
+        document.getElementById('chatInput').focus();
+    }
+
+    function addMessageToUI(role, content, suggestedPrice = null, tradeOff = null) {
+        const history     = document.getElementById('chatHistory');
+        const placeholder = history.querySelector('.chat-placeholder');
+        if (placeholder) placeholder.remove();
+
+        const div = document.createElement('div');
+        div.className = `chat-message ${role}`;
+
+        let tagsHtml = '';
+        if (role === 'agent') {
+            let tags = [];
+            if (suggestedPrice) tags.push(`<span class="suggested-price">💰 ₹${parseFloat(suggestedPrice).toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>`);
+            if (tradeOff)       tags.push(`<span class="trade-off-tag">↔️ ${tradeOff}</span>`);
+            if (tags.length)    tagsHtml = `<div class="chat-tags">${tags.join('')}</div>`;
+        }
+
+        const label = role === 'client' ? 'Client' : 'AI Assistant';
+        div.innerHTML = `
+            <div class="msg-label">${label}</div>
+            <div class="bubble">
+                <p>${content}</p>
+                ${tagsHtml}
+            </div>
+        `;
+        history.appendChild(div);
+        history.scrollTop = history.scrollHeight;
+    }
+
+    function addPendingNotice(text) {
+        const history     = document.getElementById('chatHistory');
+        const placeholder = history.querySelector('.chat-placeholder');
+        if (placeholder) placeholder.remove();
+
+        const div = document.createElement('div');
+        div.className = 'pending-notice';
+        div.textContent = text;
+        history.appendChild(div);
+        history.scrollTop = history.scrollHeight;
+    }
+
+    // Enter key to send
+    document.getElementById('chatInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage(quoteId);
+    });
+
+    // Auto-scroll
+    const ch = document.getElementById('chatHistory');
+    ch.scrollTop = ch.scrollHeight;
+</script>
+{% endblock %}

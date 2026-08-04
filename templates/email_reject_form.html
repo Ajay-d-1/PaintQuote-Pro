@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write Your Own Reply — PaintQuote Pro</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f3f4f6; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; font-family: 'Inter', sans-serif; }
+        .form-card { background: white; border-radius: 16px; padding: 2.5rem; max-width: 560px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-top: 2rem; }
+        .brand { font-size: 1.1rem; font-weight: 800; color: #1e40af; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.4rem; }
+        h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; }
+        .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.6; }
+        .context-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.88rem; }
+        .ctx-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #9ca3af; margin-bottom: 0.4rem; }
+        .ctx-msg { color: #374151; line-height: 1.55; }
+        .ctx-ai { color: #f97316; border-left: 3px solid #f97316; padding-left: 0.75rem; margin-top: 0.5rem; }
+        label { display: block; font-size: 0.82rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        textarea { width: 100%; padding: 0.875rem 1rem; border: 1.5px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 0.95rem; color: #111827; resize: vertical; min-height: 120px; margin-bottom: 1rem; transition: border-color 0.2s; }
+        textarea:focus { outline: none; border-color: #1e40af; box-shadow: 0 0 0 3px rgba(30,64,175,0.12); }
+        .btn-row { display: flex; gap: 0.75rem; }
+        .btn-submit { background: #1e40af; color: white; border: none; padding: 0.875rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: 0.95rem; font-family: inherit; cursor: pointer; flex: 1; transition: background 0.2s; }
+        .btn-submit:hover { background: #1e3a8a; }
+        .btn-skip { background: white; color: #6b7280; border: 1.5px solid #e5e7eb; padding: 0.875rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; font-family: inherit; cursor: pointer; transition: border-color 0.2s; }
+        .btn-skip:hover { border-color: #d1d5db; color: #374151; }
+        .note { font-size: 0.8rem; color: #9ca3af; text-align: center; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <div class="brand">🎨 PaintQuote Pro</div>
+        <h1>Write Your Reply</h1>
+        <p class="subtitle">
+            You rejected the AI draft. Write your own reply to
+            <strong>{{ quote.client_name if quote else 'the client' }}</strong> below,
+            or skip to leave it unanswered for now.
+        </p>
+
+        <!-- Context: what client said and what AI drafted -->
+        <div class="context-box">
+            <div class="ctx-label">Client's Message</div>
+            <div class="ctx-msg">{{ aq.client_message }}</div>
+            <div style="margin-top:0.75rem">
+                <div class="ctx-label">AI Draft (Rejected)</div>
+                <div class="ctx-msg ctx-ai">{{ aq.ai_suggested_reply }}</div>
+                {% if aq.suggested_price %}
+                <div style="font-size:0.8rem;color:#059669;margin-top:0.4rem;font-weight:700">
+                    💰 Suggested counter-offer: ₹{{ "%.0f" | format(aq.suggested_price) }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="/api/email-reject/{{ aq.id }}">
+            <input type="hidden" name="token" value="{{ token }}">
+
+            <label for="dad_response">Your Reply to Client (optional)</label>
+            <textarea id="dad_response" name="dad_response"
+                      placeholder="Type your reply to the client here… or leave blank to not send anything."></textarea>
+
+            <div class="btn-row">
+                <button type="submit" class="btn-submit">📨 Send My Reply</button>
+                <button type="submit" class="btn-skip" name="dad_response" value="">Skip — Don't Send</button>
+            </div>
+        </form>
+
+        <p class="note">
+            Approval ID: AQ-{{ aq.id }} &middot;
+            <a href="/dashboard" style="color:#1e40af;text-decoration:none;">Go to Dashboard</a>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote #{{ quote.id }} - PaintQuote Pro</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">🎨 PaintQuote Pro</div>
+        <div class="nav-links">
+            <a href="/">New Quote</a>
+            <a href="/dashboard">Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="two-column">
+            <div class="column">
+                <div class="card">
+                    <h2>Quote #{{ quote.id }}</h2>
+                    <div class="quote-info">
+                        <p><strong>Client:</strong> {{ quote.client_name }}</p>
+                        <p><strong>Paint Grade:</strong> {{ quote.paint_grade.title() }}</p>
+                        <p><strong>Total Area:</strong> {{ "%.0f"|format(quote.total_area) }} sq ft</p>
+                        <p><strong>Date:</strong> {{ quote.created_at[:10] }}</p>
+                    </div>
+
+                    <h3>Cost Breakdown</h3>
+                    <table class="breakdown-table">
+                        {% for item, amount in quote_breakdown.items() %}
+                        <tr>
+                            <td>{{ item }}</td>
+                            <td class="amount">₹{{ "%.2f"|format(amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+
+                    <div class="quote-total">
+                        <strong>Total: ₹{{ "%.2f"|format(quote.total_cost) }}</strong>
+                    </div>
+
+                    <a href="/api/quote/{{ quote.id }}/pdf" class="btn-primary">📄 Download PDF</a>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="card chat-card">
+                    <h2>🤖 AI Negotiation Assistant</h2>
+                    <p class="chat-subtitle">Simulate client messages to practice responses</p>
+
+                    <div id="chatHistory" class="chat-history">
+                        {% if chat_history %}
+                            {% for msg in chat_history %}
+                            <div class="chat-message {{ msg.role }}">
+                                <strong>{{ "Client" if msg.role == "client" else "AI Assistant" }}:</strong>
+                                <p>{{ msg.message }}</p>
+                                {% if msg.suggested_price %}
+                                <span class="suggested-price">Suggested: ₹{{ "%.0f"|format(msg.suggested_price) }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="chat-placeholder">
+                                No messages yet. Start a negotiation below.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" placeholder="Type a client message... e.g., 'Can you reduce the price?'">
+                        <button class="btn-primary" onclick="sendMessage({{ quote.id }})">Send</button>
+                    </div>
+
+                    <div class="quick-messages">
+                        <button class="btn-small" onclick="quickMessage('Can you give me a discount?')">"Discount?"</button>
+                        <button class="btn-small" onclick="quickMessage('This is too expensive. Can you do it for less?')">"Too expensive"</button>
+                        <button class="btn-small" onclick="quickMessage('Can you finish it in 3 days?')">"Rush job"</button>
+                        <button class="btn-small" onclick="quickMessage('What if we skip the primer?')">"Skip primer"</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const quoteId = {{ quote.id }};
+
+        async function sendMessage(id) {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+
+            // Add client message to UI immediately
+            addMessageToUI('client', message);
+
+            try {
+                const resp = await fetch('/api/negotiate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({quote_id: id, message: message})
+                });
+                const data = await resp.json();
+
+                let html = `<p>${data.reply}</p>`;
+                if (data.suggested_price) {
+                    html += `<span class="suggested-price">Suggested Price: ₹${data.suggested_price.toFixed(0)}</span>`;
+                }
+                if (data.trade_off) {
+                    html += `<span class="trade-off">Trade-off: ${data.trade_off}</span>`;
+                }
+                addMessageToUI('agent', html, true);
+
+            } catch (e) {
+                addMessageToUI('agent', 'Sorry, I had trouble processing that. Please try again.');
+            }
+        }
+
+        function quickMessage(text) {
+            document.getElementById('chatInput').value = text;
+        }
+
+        function addMessageToUI(role, content, isHtml=false) {
+            const history = document.getElementById('chatHistory');
+            const placeholder = history.querySelector('.chat-placeholder');
+            if (placeholder) placeholder.remove();
+
+            const div = document.createElement('div');
+            div.className = `chat-message ${role}`;
+            const label = role === 'client' ? 'Client' : 'AI Assistant';
+            div.innerHTML = `<strong>${label}:</strong> ${isHtml ? content : '<p>' + content + '</p>'}`;
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage(quoteId);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reply Sent — PaintQuote Pro</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta http-equiv="refresh" content="4;url=/dashboard">
+    <style>
+        body { background:#f3f4f6; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; font-family:'Inter',sans-serif; }
+        .card { background:white; border-radius:16px; padding:3rem; text-align:center; max-width:480px; width:100%; box-shadow:0 10px 40px rgba(0,0,0,0.1); }
+        h1 { font-size:1.75rem; font-weight:800; color:#1e40af; margin:1rem 0 0.75rem; }
+        p { color:#6b7280; font-size:0.95rem; line-height:1.6; }
+        a { color:#1e40af; font-weight:600; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div style="font-size:3.5rem">📨</div>
+        <h1>Reply Sent!</h1>
+        <p>Your custom response has been saved and marked as sent to the client.</p>
+        {% if quote_id %}
+        <p style="margin-top:1rem"><a href="/quote/{{ quote_id }}">View the full quote conversation →</a></p>
+        {% endif %}
+        <p style="font-size:0.85rem;margin-top:1.5rem;color:#9ca3af">Redirecting to dashboard in 4 seconds…</p>
+        <p style="margin-top:0.5rem"><a href="/dashboard">Go to Dashboard →</a></p>
+    </div>
+</body>
+</html>
