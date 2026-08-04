@@ -79,9 +79,21 @@ def init_db() -> None:
     """)
     conn.commit()
 
-    # Safe migration: add secure_token if column didn't exist before
+    # Safe migration: add secure_token if column didn't exist before.
+    # NOTE: SQLite does not allow ALTER TABLE ... ADD COLUMN ... UNIQUE —
+    # that always raises OperationalError, so it must be added as a plain
+    # column first, then enforced separately with a unique index.
     try:
-        conn.execute("ALTER TABLE approval_queue ADD COLUMN secure_token TEXT UNIQUE")
+        conn.execute("ALTER TABLE approval_queue ADD COLUMN secure_token TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_approval_queue_secure_token "
+            "ON approval_queue(secure_token)"
+        )
         conn.commit()
     except sqlite3.OperationalError:
         pass
